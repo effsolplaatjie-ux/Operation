@@ -20,13 +20,13 @@ router.post('/register', async (req, res) => {
 
         const sql = `INSERT INTO users (
             role, status, username, password_hash, full_name, email, phone,
-            house_no, street, suburb, city, municipality, district, province, country,
+            house_no, street, suburb, city, municipality, province, country,
             area_of_operation, station_name, contact_person
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         await pool.query(sql, [
             role, status, username, hash, full_name, email, phone,
-            house_no, street, suburb, city, municipality, district, province, country,
+            house_no, street, suburb, city, municipality, province, country,
             area_of_operation, station_name, contact_person
         ]);
 
