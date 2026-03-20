@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../db');
 const jwt = require('jsonwebtoken');
 
-// Middleware to protect private details
+// Middleware to protect routes
 const auth = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({ message: "Access Denied" });
@@ -18,7 +18,7 @@ const auth = (req, res, next) => {
 // --- GET PRIVATE DASHBOARD DETAILS ---
 router.get('/dashboard', auth, async (req, res) => {
     try {
-        if (req.user.role === 'admin') return res.json({ role: 'admin' });
+        if (req.user.role === 'admin') return res.json({ role: 'admin', full_name: 'System Admin' });
         
         const [user] = await pool.query('SELECT * FROM users WHERE id = ?', [req.user.id]);
         if (user.length === 0) return res.status(404).json({ message: "User not found" });
@@ -29,7 +29,8 @@ router.get('/dashboard', auth, async (req, res) => {
     }
 });
 
-// --- ADMIN: GET PENDING ACCOUNTS (Renamed from /pending-orgs to fix 404) ---
+// --- ADMIN: GET PENDING ACCOUNTS ---
+// Matches the fetch(`${API_URL}/pending`) in admin.html
 router.get('/pending', auth, async (req, res) => {
     try {
         if (req.user.role !== 'admin') return res.status(403).json({ message: "Unauthorized" });
@@ -41,7 +42,8 @@ router.get('/pending', auth, async (req, res) => {
     }
 });
 
-// --- ADMIN: APPROVE/REMOVE ACTION (Added try/catch) ---
+// --- ADMIN: APPROVE/REMOVE ACTION ---
+// Fixed with Try/Catch and matches admin.html handleAction()
 router.post('/action', auth, async (req, res) => {
     try {
         if (req.user.role !== 'admin') return res.status(403).json({ message: "Unauthorized" });
@@ -53,34 +55,35 @@ router.post('/action', auth, async (req, res) => {
         } else if (action === 'remove') {
             await pool.query('DELETE FROM users WHERE id = ?', [userId]);
         } else {
-            return res.status(400).json({ message: "Invalid action" });
+            return res.status(400).json({ message: "Invalid action type" });
         }
         
-        res.json({ message: `Account ${action}d successfully` });
+        res.json({ message: `Account successfully ${action}d.` });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
 // --- PROFILE UPDATE: For edit-profile.html ---
+// Added to save changes from the frontend
 router.put('/:id', auth, async (req, res) => {
     try {
-        const { full_name, phone, house_no, street, suburb, city, province } = req.body;
+        const { full_name, phone, house_no, street, suburb, city, municipality, province } = req.body;
         const targetId = req.params.id;
 
-        // Security check: Users can only edit themselves, unless they are admin
+        // Security check: Only self or admin can edit
         if (req.user.id != targetId && req.user.role !== 'admin') {
-            return res.status(403).json({ message: "Unauthorized to edit this profile" });
+            return res.status(403).json({ message: "Unauthorized" });
         }
 
         const sql = `
             UPDATE users 
-            SET full_name = ?, phone = ?, house_no = ?, street = ?, suburb = ?, city = ?, province = ?
+            SET full_name = ?, phone = ?, house_no = ?, street = ?, suburb = ?, city = ?, municipality = ?, province = ?
             WHERE id = ?
         `;
         
         await pool.query(sql, [
-            full_name, phone, house_no, street, suburb, city, province, targetId
+            full_name, phone, house_no, street, suburb, city, municipality, province, targetId
         ]);
 
         res.json({ message: "Profile updated successfully!" });
