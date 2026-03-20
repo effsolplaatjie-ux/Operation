@@ -21,10 +21,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
 
-// 3. BIND ROUTES
-app.use('/api/auth', authRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/users', userRoutes);
 
 // Root test route
 app.get('/', (req, res) => res.send("Wanya Tsotsi API is Online"));
